@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Savings 🤎</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f8f1e7;color:#5a3e36;font-family:Arial,sans-serif}
+header{background:#5a3e36;color:#fff;padding:20px;text-align:center}
+header h1{margin:0;font-size:27px}
+header p{margin:7px 0 0;opacity:.85}
+nav{display:flex;gap:6px;overflow:auto;background:#8b6b5c;padding:8px}
+nav button{border:0;border-radius:15px;padding:10px 14px;background:#f8f1e7;color:#5a3e36;font-weight:bold;white-space:nowrap}
+main{max-width:700px;margin:auto;padding:15px}
+.page{display:none}.page.active{display:block}
+.card{background:#fffaf4;border:1px solid #e8d8c8;border-radius:22px;padding:18px;margin:12px 0;box-shadow:0 4px 12px #5a3e3612}
+.balance{font-size:35px;font-weight:bold;text-align:center;margin:10px}
+.coins{text-align:center;font-size:18px}
+button{cursor:pointer;border:0;border-radius:14px;padding:11px 15px;background:#8b6b5c;color:white;font-weight:bold}
+button.gold{background:#c9a66b;color:#5a3e36}
+button.light{background:#e8d8c8;color:#5a3e36}
+button:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>*{flex:1}
+input{width:100%;padding:12px;border:1px solid #d8c5b5;border-radius:12px;margin:5px 0;background:white}
+.progress{height:18px;background:#e8d8c8;border-radius:20px;overflow:hidden}
+.bar{height:100%;background:#c9a66b;width:0%;transition:.4s}
+.history,.owned{display:grid;gap:9px}
+.item{background:#fff;border:1px solid #e8d8c8;border-radius:17px;padding:13px}
+.item b{font-size:17px}
+.price{color:#8b6b5c;font-weight:bold}
+.shop{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.product{background:#fffaf4;border:1px solid #e8d8c8;border-radius:18px;padding:13px;text-align:center}
+.product .emoji{font-size:35px}
+.product h3{margin:6px 0;font-size:16px}
+.product small{display:block;margin:5px 0 10px;color:#8b6b5c}
+.badge{display:inline-block;background:#e8d8c8;padding:5px 9px;border-radius:12px;font-size:12px}
+.activeItem{border:2px solid #c9a66b}
+.bigJar{text-align:center;font-size:75px;padding:15px}
+.center{text-align:center}
+h2{margin-top:5px}
+.tip{background:#f1e4d7;border-radius:15px;padding:13px}
+.stat{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eadfd5}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+background:#5a3e36;color:white;padding:12px 18px;border-radius:20px;display:none;z-index:5}
+@media(max-width:430px){.shop{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>My Savings 🤎</h1>
+<p>החיסכון שלי • המטבעות שלי • הדברים שלי</p>
+</header>
+
+<nav>
+<button onclick="page('home',this)">🏠 בית</button>
+<button onclick="page('history',this)">📜 היסטוריה</button>
+<button onclick="page('storePage',this)">🛍️ חנות</button>
+<button onclick="page('ownedPage',this)">🎁 שלי</button>
+<button onclick="page('stats',this)">📊 סטטיסטיקה</button>
+</nav>
+
+<main>
+
+<section id="home" class="page active">
+<div class="card center">
+<h2>💰 החיסכון שלי</h2>
+<div id="balance" class="balance">₪0</div>
+<div id="coins" class="coins">🪙 0 מטבעות</div>
+</div>
+
+<div class="card">
+<h2>➕ הוספת כסף</h2>
+<input id="incomeInput" type="number" min="0" placeholder="כמה כסף הוספת?">
+<button onclick="addIncome()">הוספתי כסף 💰</button>
+</div>
+
+<div class="card">
+<h2>➖ הוצאה</h2>
+<input id="expenseInput" type="number" min="0" placeholder="כמה הוצאת?">
+<input id="expenseName" placeholder="על מה הוצאת?">
+<button onclick="addExpense()">רשמתי הוצאה</button>
+</div>
+
+<div class="card">
+<h2>🎯 יעד חיסכון</h2>
+<input id="goalInput" type="number" min="0" placeholder="למשל 1000">
+<button onclick="saveGoal()">שמור יעד</button>
+<p id="goalText">עדיין אין יעד</p>
+<div class="progress"><div id="goalBar" class="bar"></div></div>
+</div>
+
+<div class="card center">
+<h2>🎁 מתנה יומית</h2>
+<p id="rewardText">בודקת...</p>
+<div id="streak"></div>
+<button id="rewardBtn" class="gold" onclick="claimReward()">קבלי את המתנה 🎁</button>
+</div>
+
+<div class="card">
+<h2>💡 טיפ חיסכון</h2>
+<div id="tip" class="tip"></div>
+</div>
+
+<div class="card center">
+<div id="activeJar" class="bigJar">🏦</div>
+<b>הקופה הפעילה שלי</b>
+<p id="activeJarName">קופת ברירת מחדל</p>
+</div>
+</section>
+
+<section id="history" class="page">
+<div class="card">
+<h2>📜 היסטוריה</h2>
+<div id="historyList" class="history"></div>
+</div>
+</section>
+
+<section id="storePage" class="page">
+<div class="card center">
+<h2>🛍️ החנות</h2>
+<div id="shopCoins">🪙 0</div>
+<p>קני דברים מגניבים במטבעות שלך!</p>
+</div>
+<div id="shopGrid" class="shop"></div>
+</section>
+
+<section id="ownedPage" class="page">
+<div class="card">
+<h2>🎁 הפריטים שלי</h2>
+<p>כל מה שקנית נשאר אצלך 🤎</p>
+<div id="ownedList" class="owned"></div>
+</div>
+</section>
+
+<section id="stats" class="page">
+<div class="card">
+<h2>📊 הסטטיסטיקות שלי</h2>
+<div id="statsBox"></div>
+</div>
+<div class="card">
+<h2>🏆 הישגים</h2>
+<div id="achievements"></div>
+</div>
+</section>
+
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const KEY="saveMeData";
+
+const defaultData={
+ balance:0,coins:0,income:0,expenses:0,goal:0,
+ history:[],purchased:[],equipped:{jar:null,background:null,
+ effect:null,character:null,badge:null},
+ streak:0,lastRewardDate:null
+};
+
+let d=JSON.parse(localStorage.getItem(KEY)||"null")||defaultData;
+
+const items=[
+["jar1","🏦","קופת זכוכית","jar",5],
+["bg1","🤍","רקע קרם","background",8],
+["jar2","☕","קופת קפה","jar",10],
+["char1","🧸","דובי קטן","character",12],
+["effect1","✨","נצנצים","effect",15],
+["bg2","🤎","רקע בז׳","background",18],
+["char2","🐰","ארנב","character",20],
+["effect2","🪙","מטבעות קופצים","effect",22],
+["bg3","🍫","רקע שוקולד","background",25],
+["gift1","🎁","קופסת הפתעה","effect",28],
+["char3","🐱","חתול","character",30],
+["bg4","☕","רקע מוקה","background",35],
+["jar3","💎","קופת יהלום","jar",40],
+["effect3","🎉","קונפטי","effect",45],
+["bg5","🌙","מצב לילה","background",50],
+["char4","🦊","שועל","character",55],
+["effect4","✨","אפקט זהב","effect",60],
+["bg6","🌿","רקע סייג׳","background",65],
+["char5","🐼","פנדה","character",70],
+["badge1","🏅","תג זהב","badge",75],
+["bg7","☁️","רקע עננים","background",80],
+["jar4","👜","קופת תיק","jar",90],
+["char6","🐨","קואלה","character",100],
+["badge2","⭐","אייקונים מיוחדים","badge",110],
+["jar5","📱","קופת טלפון","jar",125],
+["effect5","🔮","אנימציה קסומה","effect",140],
+["jar6","✈️","קופת טיולים","jar",150],
+["effect6","⭐","אפקט כוכבים","effect",175],
+["badge3","👑","כתר","badge",200],
+["jar7","🏛️","קופת בנק","jar",225],
+["char7","🧸","דובי זהב","character",250],
+["jar8","🫙","קופה ענקית","jar",275],
+["bg8","🌌","רקע גלקסיה","background",300],
+["effect7","🎊","קונפטי זהב","effect",325],
+["effect8","💎","אפקט יהלומים","effect",350],
+["badge4","🏆","גביע אלופה","badge",400],
+["effect9","🌧️","גשם מטבעות","effect",450],
+["effect10","✨","אפקט יוקרתי","effect",500],
+["jar9","👑","קופת מלכה","jar",550],
+["bg9","🌟","רקע כוכבים","background",600],
+["effect11","💫","אפקט אור","effect",650],
+["jar10","🏰","קופת טירה","jar",700],
+["badge5","💎","סט יהלומים","badge",800],
+["badge6","👑","סט מלכותי","badge",900],
+["effect12","🌈","קשת","effect",1000],
+["bg10","🚀","רקע חלל","background",1100],
+["badge7","🏆","אלופה","badge",1250],
+["badge8","💰","מיליונרית","badge",1400],
+["badge9","🥇","מאסטרית זהב","badge",1600],
+["jar11","💎","Ultimate Vault","jar",2000]
+];
+
+const rewards=[5,8,10,15,20,25,40];
+
+function save(){
+ localStorage.setItem(KEY,JSON.stringify(d));
+}
+
+function money(n){
+ return Number(n||0).toLocaleString("he-IL");
+}
+
+function toast(t){
+ const x=document.getElementById("toast");
+ x.textContent=t;x.style.display="block";
+ setTimeout(()=>x.style.display="none",1800);
+}
+
+function page(id,btn){
+ document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+ render();
+}
+
+function addIncome(){
+ let n=Number(document.getElementById("incomeInput").value);
+ if(n<=0)return;
+ d.balance+=n;d.income+=n;
+ d.history.unshift({type:"income",amount:n,date:new Date().toLocaleDateString("he-IL")});
+ document.getElementById("incomeInput").value="";
+ save();toast("הכסף נוסף 💰");render();
+}
+
+function addExpense(){
+ let n=Number(document.getElementById("expenseInput").value);
+ let name=document.getElementById("expenseName").value||"הוצאה";
+ if(n<=0||n>d.balance)return toast("הסכום לא תקין");
+ d.balance-=n;d.expenses+=n;
+ d.history.unshift({type:"expense",amount:n,name,date:new Date().toLocaleDateString("he-IL")});
+ document.getElementById("expenseInput").value="";
+ document.getElementById("expenseName").value="";
+ save();toast("ההוצאה נשמרה");render();
+}
+
+function saveGoal(){
+ let n=Number(document.getElementById("goalInput").value);
+ if(n<=0)return;
+ d.goal=n;save();toast("היעד נשמר 🎯");render();
+}
+
+function today(){
+ return new Date().toISOString().slice(0,10);
+}
+
+function yesterday(){
+ let x=new Date();x.setDate(x.getDate()-1);
+ return x.toISOString().slice(0,10);
+}
+
+function claimReward(){
+ if(d.lastRewardDate===today())return toast("כבר קיבלת היום 🎁");
+
+ if(d.history.some(x=>x.type==="expense"&&x.date===new Date().toLocaleDateString("he-IL")))
+ return toast("היום הייתה הוצאה — מחר מחכה מתנה 🤎");
+
+ if(d.lastRewardDate===yesterday())d.streak++;
+ else d.streak=1;
+
+ let reward=rewards[Math.min(d.streak-1,rewards.length-1)];
+ d.coins+=reward;d.lastRewardDate=today();
+ save();toast("קיבלת "+reward+" מטבעות! 🪙");render();
+}
+
+function buy(id){
+ let item=items.find(x=>x[0]===id);
+ if(!item||d.purchased.includes(id))return;
+ if(d.coins<item[4])return toast("אין מספיק מטבעות 🪙");
+
+ d.coins-=item[4];
+ d.purchased.push(id);
+
+ if(item[3]==="jar"&&!d.equipped.jar)d.equipped.jar=id;
+ if(item[3]==="background"&&!d.equipped.background)d.equipped.background=id;
+ if(item[3]==="effect"&&!d.equipped.effect)d.equipped.effect=id;
+ if(item[3]==="character"&&!d.equipped.character)d.equipped.character=id;
+ if(item[3]==="badge"&&!d.equipped.badge)d.equipped.badge=id;
+
+ save();toast("נקנה! הפריט נוסף לאוסף 🎁");render();
+}
+
+function equip(id){
+ let item=items.find(x=>x[0]===id);
+ if(!item||!d.purchased.includes(id))return;
+
+ d.equipped[item[3]]=id;
+ save();toast("הפריט בשימוש ✨");render();
+}
+
+function renderShop(){
+ document.getElementById("shopCoins").textContent="🪙 "+money(d.coins);
+ document.getElementById("shopGrid").innerHTML=items.map(x=>{
+  let owned=d.purchased.includes(x[0]);
+  return `<div class="product">
+   <div class="emoji">${x[1]}</div>
+   <h3>${x[2]}</h3>
+   <small>${x[3]}</small>
+   <div class="price">🪙 ${x[4]}</div>
+   ${owned
+    ?`<button class="light" onclick="equip('${x[0]}')">השתמשי</button>`
+    :`<button onclick="buy('${x[0]}')">קני</button>`}
+  </div>`;
+ }).join("");
+}
+
+function renderOwned(){
+ let list=items.filter(x=>d.purchased.includes(x[0]));
+ if(!list.length){
+  document.getElementById("ownedList").innerHTML=
+  `<div class="item center">עדיין אין לך פריטים 🛍️<br>לכי לחנות וקני משהו!</div>`;
+  return;
+ }
+
+ document.getElementById("ownedList").innerHTML=list.map(x=>{
+  let active=d.equipped[x[3]]===x[0];
+  return `<div class="item ${active?"activeItem":""}">
+   <b>${x[1]} ${x[2]}</b>
+   <span class="badge">${x[3]}</span>
+   <br><br>
+   ${active
+    ?`<button disabled>✓ בשימוש</button>`
+    :`<button class="gold" onclick="equip('${x[0]}')">השתמשי</button>`}
+  </div>`;
+ }).join("");
+}
+
+function renderJar(){
+ let id=d.equipped.jar;
+ let x=items.find(a=>a[0]===id);
+ document.getElementById("activeJar").textContent=x?x[1]:"🏦";
+ document.getElementById("activeJarName").textContent=x?x[2]:"קופת ברירת מחדל";
+}
+
+function renderReward(){
+ let btn=document.getElementById("rewardBtn");
+ if(d.lastRewardDate===today()){
+  document.getElementById("rewardText").textContent="כבר קיבלת את המתנה של היום 🎁";
+  btn.disabled=true;
+ }else{
+  document.getElementById("rewardText").textContent=
+  "אם לא רשמת הוצאה היום — קבלי מטבעות!";
+  btn.disabled=false;
+ }
+ document.getElementById("streak").textContent="🔥 רצף חיסכון: "+d.streak+" ימים";
+}
+
+function renderHistory(){
+ let h=document.getElementById("historyList");
+ if(!d.history.length){
+  h.innerHTML=`<div class="item center">עדיין אין היסטוריה 🤎</div>`;
+  return;
+ }
+ h.innerHTML=d.history.map(x=>`
+ <div class="item">
+ <b>${x.type==="income"?"➕ הכנסה":"➖ "+(x.name||"הוצאה")}</b>
+ <span>${x.type==="income"?"+":"-"}₪${money(x.amount)}</span>
+ <small>${x.date}</small>
+ </div>`).join("");
+}
+
+function renderStats(){
+ let total=d.income-d.expenses;
+ document.getElementById("statsBox").innerHTML=`
+ <div class="stat"><span>💰 כסף שנכנס</span><b>₪${money(d.income)}</b></div>
+ <div class="stat"><span>💸 הוצאות</span><b>₪${money(d.expenses)}</b></div>
+ <div class="stat"><span>🏦 יתרה</span><b>₪${money(total)}</b></div>
+ <div class="stat"><span>🪙 מטבעות</span><b>${money(d.coins)}</b></div>
+ <div class="stat"><span>🎁 פריטים שקנית</span><b>${d.purchased.length}</b></div>
+ <div class="stat"><span>🔥 רצף</span><b>${d.streak} ימים</b></div>`;
+
+ let ach=[];
+ if(d.balance>=100)ach.push("🌱 התחלת לחסוך — 100₪");
+ if(d.balance>=500)ach.push("⭐ חוסכת מתחילה — 500₪");
+ if(d.balance>=1000)ach.push("🏆 אלופת חיסכון — 1,000₪");
+ if(d.purchased.length>=5)ach.push("🛍️ שופינג ראשון — 5 פריטים");
+ if(d.purchased.length>=10)ach.push("🎁 אוסף גדול — 10 פריטים");
+ if(d.streak>=7)ach.push("🔥 שבוע של חיסכון");
+ document.getElementById("achievements").innerHTML=
+ ach.length?ach.map(x=>`<div class="item">${x}</div>`).join("")
+ :`<div class="item">עוד רגע ייפתח ההישג הראשון שלך ✨</div>`;
+}
+
+function render(){
+ document.getElementById("balance").textContent="₪"+money(d.balance);
+ document.getElementById("coins").textContent="🪙 "+money(d.coins)+" מטבעות";
+
+ let pct=d.goal?Math.min(100,d.balance/d.goal*100):0;
+ document.getElementById("goalBar").style.width=pct+"%";
+ document.getElementById("goalText").textContent=d.goal
+ ?`₪${money(d.balance)} מתוך ₪${money(d.goal)} (${Math.round(pct)}%)`
+ :"עדיין אין יעד";
+
+ renderReward();
+ renderHistory();
+ renderShop();
+ renderOwned();
+ renderJar();
+ renderStats();
+
+ let tips=[
+ "שימי לב להוצאות הקטנות — הן מצטברות 💡",
+ "קבעי יעד שממש כיף לך להגיע אליו 🎯",
+ "יום בלי הוצאה = עוד הזדמנות לקבל מטבעות 🪙",
+ "לפני קנייה, שאלי את עצמך אם את באמת רוצה את זה 🤎",
+ "כל סכום קטן שנשמר יכול לעזור להגיע ליעד ✨"
+ ];
+ document.getElementById("tip").textContent=
+ tips[Math.floor(Math.random()*tips.length)];
+}
+
+render();
+</script>
+
+</body>
+</html>
